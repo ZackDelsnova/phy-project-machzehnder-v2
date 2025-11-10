@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refractive Index with Mach-Zehnder Interferometer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 900px;
+        }
+        h1 {
+            text-align: center;
+            color: #1a237e;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #555;
+            margin-bottom: 1.5rem;
+            font-size: 0.9em;
+        }
+        #mziCanvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #000;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .control-group label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .slider-container, .select-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1a237e;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1a237e;
+            cursor: pointer;
+        }
+        select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: white;
+            font-size: 1em;
+            flex-grow: 1;
+        }
+        .value-display {
+            min-width: 80px;
+            text-align: right;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .output {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .output h2 {
+            margin-bottom: 1rem;
+        }
+        .detectors {
+            display: flex;
+            justify-content: space-around;
+            font-size: 1.2rem;
+        }
+        .detector {
+            padding: 1rem;
+            border-radius: 8px;
+            width: 150px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #detector1 { background-color: #e3f2fd; color: #333; }
+        #detector2 { background-color: #e3f2fd; color: #333; }
+        .detector-value {
+            font-size: 2rem;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Refractive Index Measurement</h1>
+        <p class="subtitle">Using a Mach-Zehnder Interferometer</p>
+        <canvas id="mziCanvas" width="600" height="500"></canvas>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="mediumSelect">Medium in Top Arm</label>
+                <div class="select-container">
+                    <select id="mediumSelect">
+                        <option value="air">Air</option>
+                        <option value="water">Water</option>
+                        <option value="glass">Glass</option>
+                    </select>
+                    <span class="value-display" id="refractiveIndexValue">n = 1.00</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="wavelengthSlider">Wavelength (λ)</label>
+                <div class="slider-container">
+                    <input type="range" id="wavelengthSlider" min="400" max="700" value="650" step="10">
+                    <span class="value-display" id="wavelengthValue">650 nm</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="m1Slider">Mirror M1 (Bottom) - Move Down</label>
+                <div class="slider-container">
+                    <input type="range" id="m1Slider" min="200" max="300" value="200" step="1">
+                    <span class="value-display" id="m1Value">200</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="m2Slider">Mirror M2 (Top) - Move Up</label>
+                <div class="slider-container">
+                    <input type="range" id="m2Slider" min="350" max="400" value="400" step="1">
+                    <span class="value-display" id="m2Value">400</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="output">
+            <h2>Output Intensities</h2>
+            <div class="detectors">
+                <div class="detector" id="detector1">
+                    <div>Detector 1</div>
+                    <div class="detector-value" id="intensity1">100%</div>
+                </div>
+                <div class="detector" id="detector2">
+                    <div>Detector 2</div>
+                    <div class="detector-value" id="intensity2">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mziCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI Elements
+        const mediumSelect = document.getElementById('mediumSelect');
+        const refractiveIndexDisplay = document.getElementById('refractiveIndexValue');
+        const m1Slider = document.getElementById('m1Slider');
+        const m2Slider = document.getElementById('m2Slider');
+        const wavelengthSlider = document.getElementById('wavelengthSlider');
+        const m1Value = document.getElementById('m1Value');
+        const m2Value = document.getElementById('m2Value');
+        const wavelengthValue = document.getElementById('wavelengthValue');
+        const intensity1Display = document.getElementById('intensity1');
+        const intensity2Display = document.getElementById('intensity2');
+        const detector1Div = document.getElementById('detector1');
+        const detector2Div = document.getElementById('detector2');
+
+        // Simulation Parameters
+        let wavelength = 650; // nm
+        const n_air = 1.0; // Refractive index of air (simplified)
+
+        // Medium properties
+        const media = {
+            air: { n: 1.00, color: 'rgba(135, 206, 235, 0.1)' },
+            water: { n: 1.333, color: 'rgba(0, 119, 190, 0.3)' },
+            glass: { n: 1.52, color: 'rgba(192, 192, 192, 0.3)' }
+        };
+        let selectedMedium = media.air;
+
+        // MZI Component Positions based on FLIPPED user coordinates
+        // Original: src(2,2), bs1(4,2), m1(4,6), m2(8,2), bs2(8,6), d1(8,8), d2(10,6)
+        // Flipped: src(2,8), bs1(4,8), m1(4,4), m2(8,8), bs2(8,4), d1(8,2), d2(10,4)
+        // Scaled by 50 for canvas
+        let components = {
+            source: { x: 100, y: 400 },
+            bs1: { x: 200, y: 400 },
+            m1: { x: 200, y: 200 }, // Movable (Bottom Mirror)
+            m2: { x: 400, y: 400 }, // Movable (Top Mirror)
+            bs2: { x: 400, y: 200 },
+            d1: { x: 400, y: 100 },
+            d2: { x: 500, y: 200 }
+        };
+        
+        // Helper function to calculate distance between two points
+        function distance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        // --- Physics Calculations ---
+        function calculateOpticalPathDifference() {
+            // Path 1 (Top Arm): bs1 -> m2 -> bs2
+            const geometricPathTop = distance(components.bs1, components.m2) + distance(components.m2, components.bs2);
+
+            // Path 2 (Bottom Arm): bs1 -> m1 -> bs2
+            const geometricPathBottom = distance(components.bs1, components.m1) + distance(components.m1, components.bs2);
+            
+            // Optical path lengths (L * n)
+            // The top arm is filled with the selected medium
+            const opticalPathTop = geometricPathTop * selectedMedium.n;
+            // The bottom arm is in air
+            const opticalPathBottom = geometricPathBottom * n_air;
+            
+            return opticalPathTop - opticalPathBottom; // Path difference ΔL
+        }
+
+        function calculateIntensities() {
+            const pathDiff = calculateOpticalPathDifference();
+            const phaseDiff = (2 * Math.PI * pathDiff) / wavelength;
+            
+            const I1 = Math.pow(Math.cos(phaseDiff / 2), 2);
+            const I2 = Math.pow(Math.sin(phaseDiff / 2), 2);
+            
+            return { I1, I2 };
+        }
+
+        // --- Drawing Functions ---
+        function clearCanvas() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        function getBeamColor(intensity) {
+            const alpha = 0.3 + intensity * 0.7;
+            return `rgba(255, 0, 0, ${alpha})`;
+        }
+
+        function drawBeam(x1, y1, x2, y2, intensity) {
+            ctx.strokeStyle = getBeamColor(intensity);
+            ctx.lineWidth = 1 + intensity * 3;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        function drawComponent(type, x, y) {
+            ctx.strokeStyle = '#fff';
+            ctx.fillStyle = '#fff';
+            ctx.lineWidth = 2;
+
+            switch(type) {
+                case 'source':
+                    ctx.beginPath();
+                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.fillStyle = 'red';
+                    ctx.fill();
+                    break;
+                case 'detector':
+                    ctx.strokeRect(x - 15, y - 15, 30, 30);
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('D', x, y);
+                    break;
+                case 'beamSplitter':
+                    ctx.beginPath();
+                    ctx.moveTo(x - 15, y - 15);
+                    ctx.lineTo(x + 15, y + 15);
+                    ctx.stroke();
+                    ctx.fillStyle = 'rgba(150, 150, 255, 0.3)';
+                    ctx.fillRect(x - 15, y - 15, 30, 30);
+                    break;
+                case 'mirror':
+                    // Draw an inclined mirror at 45 degrees (like /)
+                    ctx.beginPath();
+                    ctx.moveTo(x - 20, y + 20);
+                    ctx.lineTo(x + 20, y - 20);
+                    ctx.stroke();
+                    
+                    // Draw hatching on the back of the mirror (perpendicular to the surface)
+                    ctx.strokeStyle = '#aaa';
+                    ctx.lineWidth = 1;
+                    for(let i = -15; i <= 15; i += 5) {
+                        ctx.beginPath();
+                        // Hatching lines run parallel to the mirror's front surface
+                        ctx.moveTo(x - 20 + i, y + 20 - i);
+                        ctx.lineTo(x - 15 + i, y + 15 - i);
+                        ctx.stroke();
+                    }
+                    // Reset stroke style and width for other components
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    break;
+            }
+        }
+
+        function drawMedium() {
+            // Draw the medium in the TOP arm (bs1 -> m2 -> bs2)
+            ctx.fillStyle = selectedMedium.color;
+            ctx.beginPath();
+            ctx.moveTo(components.bs1.x, components.bs1.y);
+            ctx.lineTo(components.m2.x, components.m2.y);
+            ctx.lineTo(components.bs2.x, components.bs2.y);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function render() {
+            clearCanvas();
+            const { I1, I2 } = calculateIntensities();
+
+            // Draw medium first (in the background)
+            drawMedium();
+
+            // Draw beams based on the new layout
+            drawBeam(components.source.x, components.source.y, components.bs1.x, components.bs1.y, 1.0);
+            drawBeam(components.bs1.x, components.bs1.y, components.m1.x, components.m1.y, 0.5);
+            drawBeam(components.bs1.x, components.bs1.y, components.m2.x, components.m2.y, 0.5);
+            drawBeam(components.m1.x, components.m1.y, components.bs2.x, components.bs2.y, 0.5);
+            drawBeam(components.m2.x, components.m2.y, components.bs2.x, components.bs2.y, 0.5);
+            drawBeam(components.bs2.x, components.bs2.y, components.d1.x, components.d1.y, I1);
+            drawBeam(components.bs2.x, components.bs2.y, components.d2.x, components.d2.y, I2);
+
+            // Draw components on top
+            drawComponent('source', components.source.x, components.source.y);
+            drawComponent('beamSplitter', components.bs1.x, components.bs1.y);
+            drawComponent('mirror', components.m1.x, components.m1.y);
+            drawComponent('mirror', components.m2.x, components.m2.y);
+            drawComponent('beamSplitter', components.bs2.x, components.bs2.y);
+            drawComponent('detector', components.d1.x, components.d1.y);
+            drawComponent('detector', components.d2.x, components.d2.y);
+            
+            updateUI(I1, I2);
+        }
+        
+        function updateUI(I1, I2) {
+            intensity1Display.textContent = `${(I1 * 100).toFixed(1)}%`;
+            intensity2Display.textContent = `${(I2 * 100).toFixed(1)}%`;
+            
+            const color1 = `rgba(255, 0, 0, ${0.2 + I1 * 0.8})`;
+            const color2 = `rgba(255, 0, 0, ${0.2 + I2 * 0.8})`;
+            
+            detector1Div.style.backgroundColor = color1;
+            detector2Div.style.backgroundColor = color2;
+            detector1Div.style.color = I1 > 0.5 ? '#fff' : '#333';
+            detector2Div.style.color = I2 > 0.5 ? '#fff' : '#333';
+
+            refractiveIndexDisplay.textContent = `n = ${selectedMedium.n.toFixed(2)}`;
+        }
+
+        // --- Event Listeners ---
+        mediumSelect.addEventListener('change', (e) => {
+            selectedMedium = media[e.target.value];
+            render();
+        });
+
+        m1Slider.addEventListener('input', (e) => {
+            components.m1.y = parseFloat(e.target.value);
+            m1Value.textContent = components.m1.y;
+            render();
+        });
+
+        m2Slider.addEventListener('input', (e) => {
+            components.m2.y = parseFloat(e.target.value);
+            m2Value.textContent = components.m2.y;
+            render();
+        });
+
+        wavelengthSlider.addEventListener('input', (e) => {
+            wavelength = parseFloat(e.target.value);
+            wavelengthValue.textContent = `${wavelength} nm`;
+            render();
+        });
+
+        // --- Initialisation ---
+        render();
+
+    </script>
+</body>
+</html>
