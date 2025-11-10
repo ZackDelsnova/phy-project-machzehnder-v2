@@ -3,43 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Refractive Index with Mach-Zehnder Interferometer</title>
+    <title>Mach-Zehnder Interferometer - Advanced Simulation</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Roboto+Mono:wght@400;500&display=swap');
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
-            color: #333;
+            background-color: #0a0a0f;
+            color: #e0e0e0;
+        }
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 2rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            box-sizing: border-box;
+        }
+        .simulation-area {
+            display: flex;
+            flex-direction: column;
         }
         .container {
-            background-color: white;
+            background-color: rgba(20, 20, 35, 0.8);
             padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 900px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
         }
         h1 {
             text-align: center;
-            color: #1a237e;
+            color: #64ffda;
             margin-bottom: 0.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
         }
         .subtitle {
             text-align: center;
-            color: #555;
+            color: #8892b0;
             margin-bottom: 1.5rem;
             font-size: 0.9em;
         }
         #mziCanvas {
             display: block;
             margin: 0 auto;
-            border: 1px solid #ccc;
             border-radius: 8px;
-            background-color: #000;
+            background-color: #010409;
+            box-shadow: 0 0 20px rgba(100, 255, 218, 0.1);
+            cursor: crosshair;
         }
         .controls {
             display: grid;
@@ -52,8 +70,9 @@
             flex-direction: column;
         }
         .control-group label {
-            font-weight: bold;
+            font-weight: 400;
             margin-bottom: 0.5rem;
+            color: #64ffda;
         }
         .slider-container, .select-container {
             display: flex;
@@ -63,41 +82,49 @@
         input[type="range"] {
             flex-grow: 1;
             -webkit-appearance: none;
-            height: 8px;
+            height: 6px;
             border-radius: 5px;
-            background: #d3d3d3;
+            background: #233554;
             outline: none;
+            transition: background 0.3s;
+        }
+        input[type="range"]:hover {
+            background: #2a3f5f;
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            background: #1a237e;
+            background: #64ffda;
             cursor: pointer;
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.5);
         }
         input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            background: #1a237e;
+            background: #64ffda;
             cursor: pointer;
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.5);
         }
         select {
             padding: 8px;
             border-radius: 5px;
-            border: 1px solid #ccc;
-            background-color: white;
+            border: 1px solid #233554;
+            background-color: #0a0a0f;
+            color: #e0e0e0;
             font-size: 1em;
             flex-grow: 1;
         }
         .value-display {
             min-width: 80px;
             text-align: right;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Roboto Mono', monospace;
             font-size: 0.9em;
             white-space: nowrap;
+            color: #8892b0;
         }
         .output {
             margin-top: 2rem;
@@ -105,6 +132,8 @@
         }
         .output h2 {
             margin-bottom: 1rem;
+            color: #ccd6f6;
+            font-weight: 400;
         }
         .detectors {
             display: flex;
@@ -115,70 +144,139 @@
             padding: 1rem;
             border-radius: 8px;
             width: 150px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: all 0.4s ease;
+            border: 1px solid rgba(100, 255, 218, 0.2);
         }
-        #detector1 { background-color: #e3f2fd; color: #333; }
-        #detector2 { background-color: #e3f2fd; color: #333; }
+        #detector1 { background-color: rgba(20, 20, 35, 0.5); }
+        #detector2 { background-color: rgba(20, 20, 35, 0.5); }
         .detector-value {
             font-size: 2rem;
             font-weight: bold;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Roboto Mono', monospace;
+            color: #64ffda;
+        }
+
+        /* Right Panel Styles */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .panel {
+            background-color: rgba(20, 20, 35, 0.8);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .panel h3 {
+            color: #64ffda;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(100, 255, 218, 0.3);
+            padding-bottom: 0.5rem;
+            font-weight: 400;
+        }
+        .panel p, .panel li {
+            color: #ccd6f6;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .panel strong {
+            color: #64ffda;
+        }
+        .panel ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .panel .formula {
+            font-family: 'Roboto Mono', monospace;
+            background-color: rgba(10, 10, 15, 0.5);
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Refractive Index Measurement</h1>
-        <p class="subtitle">Using a Mach-Zehnder Interferometer</p>
-        <canvas id="mziCanvas" width="600" height="500"></canvas>
+    <div class="main-container">
+        <div class="simulation-area">
+            <div class="container">
+                <h1>MACH-ZEHNDER INTERFEROMETER</h1>
+                <p class="subtitle">Advanced Optical Simulation</p>
+                <canvas id="mziCanvas" width="600" height="500"></canvas>
 
-        <div class="controls">
-            <div class="control-group">
-                <label for="mediumSelect">Medium in Top Arm</label>
-                <div class="select-container">
-                    <select id="mediumSelect">
-                        <option value="air">Air</option>
-                        <option value="water">Water</option>
-                        <option value="glass">Glass</option>
-                    </select>
-                    <span class="value-display" id="refractiveIndexValue">n = 1.00</span>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="mediumSelect">Medium in Top Arm</label>
+                        <div class="select-container">
+                            <select id="mediumSelect">
+                                <option value="air">Air (n=1.00)</option>
+                                <option value="water">Water (n=1.33)</option>
+                                <option value="glass">Glass (n=1.52)</option>
+                            </select>
+                            <span class="value-display" id="refractiveIndexValue">n = 1.00</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label for="wavelengthSlider">Wavelength (λ)</label>
+                        <div class="slider-container">
+                            <input type="range" id="wavelengthSlider" min="400" max="700" value="550" step="10">
+                            <span class="value-display" id="wavelengthValue">550 nm</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label for="m1Slider">Mirror M1 (Bottom) - Move Down</label>
+                        <div class="slider-container">
+                            <input type="range" id="m1Slider" min="200" max="300" value="200" step="1">
+                            <span class="value-display" id="m1Value">200</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label for="m2Slider">Mirror M2 (Top) - Move Up</label>
+                        <div class="slider-container">
+                            <input type="range" id="m2Slider" min="350" max="400" value="400" step="1">
+                            <span class="value-display" id="m2Value">400</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="control-group">
-                <label for="wavelengthSlider">Wavelength (λ)</label>
-                <div class="slider-container">
-                    <input type="range" id="wavelengthSlider" min="400" max="700" value="650" step="10">
-                    <span class="value-display" id="wavelengthValue">650 nm</span>
-                </div>
-            </div>
-            <div class="control-group">
-                <label for="m1Slider">Mirror M1 (Bottom) - Move Down</label>
-                <div class="slider-container">
-                    <input type="range" id="m1Slider" min="200" max="300" value="200" step="1">
-                    <span class="value-display" id="m1Value">200</span>
-                </div>
-            </div>
-            <div class="control-group">
-                <label for="m2Slider">Mirror M2 (Top) - Move Up</label>
-                <div class="slider-container">
-                    <input type="range" id="m2Slider" min="350" max="400" value="400" step="1">
-                    <span class="value-display" id="m2Value">400</span>
+
+                <div class="output">
+                    <h2>Output Intensities</h2>
+                    <div class="detectors">
+                        <div class="detector" id="detector1">
+                            <div>Detector 1</div>
+                            <div class="detector-value" id="intensity1">100%</div>
+                        </div>
+                        <div class="detector" id="detector2">
+                            <div>Detector 2</div>
+                            <div class="detector-value" id="intensity2">0%</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="output">
-            <h2>Output Intensities</h2>
-            <div class="detectors">
-                <div class="detector" id="detector1">
-                    <div>Detector 1</div>
-                    <div class="detector-value" id="intensity1">100%</div>
-                </div>
-                <div class="detector" id="detector2">
-                    <div>Detector 2</div>
-                    <div class="detector-value" id="intensity2">0%</div>
-                </div>
+        <div class="right-panel">
+            <div class="panel">
+                <h3>Component Info</h3>
+                <p id="componentInfo">Hover over a component on the canvas to see its details.</p>
+            </div>
+            <div class="panel">
+                <h3>Calculations & Formulas</h3>
+                <ul>
+                    <li><strong>Phase Difference (Δφ):</strong></li>
+                    <li class="formula">Δφ = (2π / λ) * ΔL</li>
+                    <li><strong>Output Intensities:</strong></li>
+                    <li class="formula">I₁ = I₀ * cos²(Δφ / 2)</li>
+                    <li class="formula">I₂ = I₀ * sin²(Δφ / 2)</li>
+                </ul>
+                <p id="currentValues">
+                    <strong>Current Values:</strong><br>
+                    Path Diff (ΔL): <span id="pathDiffVal">0.00</span> nm<br>
+                    Phase Diff (Δφ): <span id="phaseDiffVal">0.00</span> rad
+                </p>
             </div>
         </div>
     </div>
@@ -200,79 +298,81 @@
         const intensity2Display = document.getElementById('intensity2');
         const detector1Div = document.getElementById('detector1');
         const detector2Div = document.getElementById('detector2');
+        const componentInfoP = document.getElementById('componentInfo');
+        const pathDiffValSpan = document.getElementById('pathDiffVal');
+        const phaseDiffValSpan = document.getElementById('phaseDiffVal');
 
         // Simulation Parameters
-        let wavelength = 650; // nm
-        const n_air = 1.0; // Refractive index of air (simplified)
-
-        // Medium properties
+        let wavelength = 550; // nm
+        const n_air = 1.0;
         const media = {
-            air: { n: 1.00, color: 'rgba(135, 206, 235, 0.1)' },
-            water: { n: 1.333, color: 'rgba(0, 119, 190, 0.3)' },
-            glass: { n: 1.52, color: 'rgba(192, 192, 192, 0.3)' }
+            air: { n: 1.00, color: 'rgba(100, 255, 218, 0.05)' },
+            water: { n: 1.333, color: 'rgba(0, 150, 255, 0.1)' },
+            glass: { n: 1.52, color: 'rgba(200, 200, 255, 0.1)' }
         };
         let selectedMedium = media.air;
 
-        // MZI Component Positions based on FLIPPED user coordinates
-        // Original: src(2,2), bs1(4,2), m1(4,6), m2(8,2), bs2(8,6), d1(8,8), d2(10,6)
-        // Flipped: src(2,8), bs1(4,8), m1(4,4), m2(8,8), bs2(8,4), d1(8,2), d2(10,4)
-        // Scaled by 50 for canvas
+        // Component Positions
         let components = {
-            source: { x: 100, y: 400 },
-            bs1: { x: 200, y: 400 },
-            m1: { x: 200, y: 200 }, // Movable (Bottom Mirror)
-            m2: { x: 400, y: 400 }, // Movable (Top Mirror)
-            bs2: { x: 400, y: 200 },
-            d1: { x: 400, y: 100 },
-            d2: { x: 500, y: 200 }
+            source: { x: 100, y: 400, type: 'source' },
+            bs1: { x: 200, y: 400, type: 'beamSplitter' },
+            m1: { x: 200, y: 200, type: 'mirror' },
+            m2: { x: 400, y: 400, type: 'mirror' },
+            bs2: { x: 400, y: 200, type: 'beamSplitter' },
+            d1: { x: 400, y: 100, type: 'detector' },
+            d2: { x: 500, y: 200, type: 'detector' }
         };
-        
-        // Helper function to calculate distance between two points
+
+        const componentDescriptions = {
+            source: {
+                name: "Laser Source",
+                description: "Generates a coherent and monochromatic beam of light that enters the interferometer."
+            },
+            beamSplitter: {
+                name: "Beam Splitter (50/50)",
+                description: "A half-silvered mirror that splits the incoming light beam into two separate paths of equal intensity."
+            },
+            mirror: {
+                name: "Mirror",
+                description: "A fully reflective surface that redirects the light beam. Its position can be adjusted to change the path length."
+            },
+            detector: {
+                name: "Photodetector",
+                description: "Measures the intensity of the light that arrives at this output. The interference pattern is observed here."
+            }
+        };
+
+        // --- Physics Calculations ---
         function distance(p1, p2) {
             return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
         }
 
-        // --- Physics Calculations ---
         function calculateOpticalPathDifference() {
-            // Path 1 (Top Arm): bs1 -> m2 -> bs2
             const geometricPathTop = distance(components.bs1, components.m2) + distance(components.m2, components.bs2);
-
-            // Path 2 (Bottom Arm): bs1 -> m1 -> bs2
             const geometricPathBottom = distance(components.bs1, components.m1) + distance(components.m1, components.bs2);
-            
-            // Optical path lengths (L * n)
-            // The top arm is filled with the selected medium
             const opticalPathTop = geometricPathTop * selectedMedium.n;
-            // The bottom arm is in air
             const opticalPathBottom = geometricPathBottom * n_air;
-            
-            return opticalPathTop - opticalPathBottom; // Path difference ΔL
+            return opticalPathTop - opticalPathBottom;
         }
 
         function calculateIntensities() {
             const pathDiff = calculateOpticalPathDifference();
             const phaseDiff = (2 * Math.PI * pathDiff) / wavelength;
-            
             const I1 = Math.pow(Math.cos(phaseDiff / 2), 2);
             const I2 = Math.pow(Math.sin(phaseDiff / 2), 2);
-            
-            return { I1, I2 };
+            return { I1, I2, pathDiff, phaseDiff };
         }
 
         // --- Drawing Functions ---
         function clearCanvas() {
-            ctx.fillStyle = '#000';
+            ctx.fillStyle = '#010409';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        
-        function getBeamColor(intensity) {
-            const alpha = 0.3 + intensity * 0.7;
-            return `rgba(255, 0, 0, ${alpha})`;
         }
 
         function drawBeam(x1, y1, x2, y2, intensity) {
-            ctx.strokeStyle = getBeamColor(intensity);
-            ctx.lineWidth = 1 + intensity * 3;
+            const alpha = 0.3 + intensity * 0.7;
+            ctx.strokeStyle = `rgba(100, 255, 218, ${alpha})`;
+            ctx.lineWidth = 1 + intensity * 2;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
@@ -280,60 +380,43 @@
         }
 
         function drawComponent(type, x, y) {
-            ctx.strokeStyle = '#fff';
-            ctx.fillStyle = '#fff';
+            ctx.strokeStyle = '#64ffda';
             ctx.lineWidth = 2;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'cyan';
 
             switch(type) {
                 case 'source':
                     ctx.beginPath();
-                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                    ctx.arc(x, y, 10, 0, 2 * Math.PI);
                     ctx.stroke();
-                    ctx.fillStyle = 'red';
+                    ctx.fillStyle = 'rgba(255, 0, 100, 0.8)';
                     ctx.fill();
                     break;
                 case 'detector':
                     ctx.strokeRect(x - 15, y - 15, 30, 30);
-                    ctx.font = '20px Arial';
-                    ctx.fillStyle = '#fff';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('D', x, y);
+                    ctx.fillStyle = 'rgba(100, 255, 218, 0.1)';
+                    ctx.fillRect(x - 15, y - 15, 30, 30);
                     break;
                 case 'beamSplitter':
                     ctx.beginPath();
                     ctx.moveTo(x - 15, y - 15);
                     ctx.lineTo(x + 15, y + 15);
                     ctx.stroke();
-                    ctx.fillStyle = 'rgba(150, 150, 255, 0.3)';
+                    ctx.fillStyle = 'rgba(100, 255, 218, 0.1)';
                     ctx.fillRect(x - 15, y - 15, 30, 30);
                     break;
                 case 'mirror':
-                    // Draw an inclined mirror at 45 degrees (like /)
                     ctx.beginPath();
                     ctx.moveTo(x - 20, y + 20);
                     ctx.lineTo(x + 20, y - 20);
                     ctx.stroke();
-                    
-                    // Draw hatching on the back of the mirror (perpendicular to the surface)
-                    ctx.strokeStyle = '#aaa';
-                    ctx.lineWidth = 1;
-                    for(let i = -15; i <= 15; i += 5) {
-                        ctx.beginPath();
-                        // Hatching lines run parallel to the mirror's front surface
-                        ctx.moveTo(x - 20 + i, y + 20 - i);
-                        ctx.lineTo(x - 15 + i, y + 15 - i);
-                        ctx.stroke();
-                    }
-                    // Reset stroke style and width for other components
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2;
                     break;
             }
+            ctx.shadowBlur = 0;
         }
 
         function drawMedium() {
-            // Draw the medium in the TOP arm (bs1 -> m2 -> bs2)
             ctx.fillStyle = selectedMedium.color;
             ctx.beginPath();
             ctx.moveTo(components.bs1.x, components.bs1.y);
@@ -343,14 +426,24 @@
             ctx.fill();
         }
         
+        function updateUI(I1, I2, pathDiff, phaseDiff) {
+            intensity1Display.textContent = `${(I1 * 100).toFixed(1)}%`;
+            intensity2Display.textContent = `${(I2 * 100).toFixed(1)}%`;
+            detector1Div.style.boxShadow = `0 0 20px rgba(100, 255, 218, ${I1})`;
+            detector2Div.style.boxShadow = `0 0 20px rgba(100, 255, 218, ${I2})`;
+            refractiveIndexDisplay.textContent = `n = ${selectedMedium.n.toFixed(2)}`;
+            
+            pathDiffValSpan.textContent = pathDiff.toFixed(2);
+            phaseDiffValSpan.textContent = phaseDiff.toFixed(2);
+        }
+        
         function render() {
+            const { I1, I2, pathDiff, phaseDiff } = calculateIntensities();
+            
             clearCanvas();
-            const { I1, I2 } = calculateIntensities();
-
-            // Draw medium first (in the background)
             drawMedium();
 
-            // Draw beams based on the new layout
+            // Draw beams
             drawBeam(components.source.x, components.source.y, components.bs1.x, components.bs1.y, 1.0);
             drawBeam(components.bs1.x, components.bs1.y, components.m1.x, components.m1.y, 0.5);
             drawBeam(components.bs1.x, components.bs1.y, components.m2.x, components.m2.y, 0.5);
@@ -359,31 +452,13 @@
             drawBeam(components.bs2.x, components.bs2.y, components.d1.x, components.d1.y, I1);
             drawBeam(components.bs2.x, components.bs2.y, components.d2.x, components.d2.y, I2);
 
-            // Draw components on top
-            drawComponent('source', components.source.x, components.source.y);
-            drawComponent('beamSplitter', components.bs1.x, components.bs1.y);
-            drawComponent('mirror', components.m1.x, components.m1.y);
-            drawComponent('mirror', components.m2.x, components.m2.y);
-            drawComponent('beamSplitter', components.bs2.x, components.bs2.y);
-            drawComponent('detector', components.d1.x, components.d1.y);
-            drawComponent('detector', components.d2.x, components.d2.y);
+            // Draw components
+            for (const key in components) {
+                const comp = components[key];
+                drawComponent(comp.type, comp.x, comp.y);
+            }
             
-            updateUI(I1, I2);
-        }
-        
-        function updateUI(I1, I2) {
-            intensity1Display.textContent = `${(I1 * 100).toFixed(1)}%`;
-            intensity2Display.textContent = `${(I2 * 100).toFixed(1)}%`;
-            
-            const color1 = `rgba(255, 0, 0, ${0.2 + I1 * 0.8})`;
-            const color2 = `rgba(255, 0, 0, ${0.2 + I2 * 0.8})`;
-            
-            detector1Div.style.backgroundColor = color1;
-            detector2Div.style.backgroundColor = color2;
-            detector1Div.style.color = I1 > 0.5 ? '#fff' : '#333';
-            detector2Div.style.color = I2 > 0.5 ? '#fff' : '#333';
-
-            refractiveIndexDisplay.textContent = `n = ${selectedMedium.n.toFixed(2)}`;
+            updateUI(I1, I2, pathDiff, phaseDiff);
         }
 
         // --- Event Listeners ---
@@ -408,6 +483,28 @@
             wavelength = parseFloat(e.target.value);
             wavelengthValue.textContent = `${wavelength} nm`;
             render();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            let found = false;
+
+            for (const key in components) {
+                const comp = components[key];
+                const dist = Math.sqrt(Math.pow(x - comp.x, 2) + Math.pow(y - comp.y, 2));
+                if (dist < 20) {
+                    const info = componentDescriptions[comp.type];
+                    componentInfoP.innerHTML = `<strong>${info.name}</strong><br>${info.description}`;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                componentInfoP.innerHTML = "Hover over a component on the canvas to see its details.";
+            }
         });
 
         // --- Initialisation ---
